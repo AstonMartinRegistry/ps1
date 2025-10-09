@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { getBrowserSupabase } from "@/lib/supabase/browser";
 
 type Props = {
   email?: string | null;
 };
 
 export default function UserBadge({ email }: Props) {
-  const supabase = getBrowserSupabase();
   const [open, setOpen] = useState(false);
   const popRef = useRef<HTMLDivElement | null>(null);
 

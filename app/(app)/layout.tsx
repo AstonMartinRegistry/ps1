@@ -40,7 +40,7 @@ export default async function AppLayout({
         <section id="manifesto" />
         {children}
         <div className="manifesto-content">
-          <p className="manifesto-text">5 seconds that's all it takes to find anyone</p>
+          <p className="manifesto-text">5 seconds that&apos;s all it takes to find anyone</p>
         </div>
         <div className="profile-content">
           <div className="profile-wrap">
