@@ -1,5 +1,6 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import UserBadge from "@/components/UserBadge";
+import SetPasswordModal from "@/components/SetPasswordModal";
 
 export default async function AppLayout({
   children,
@@ -7,6 +8,7 @@ export default async function AppLayout({
   const supabase = await getServerSupabase();
   const { data } = await supabase.auth.getUser();
   const email = data.user?.email ?? null;
+  const needsPassword = !Boolean(data.user?.user_metadata?.password_set);
 
   return (
     <div className="app-shell">
@@ -52,6 +54,7 @@ export default async function AppLayout({
           </div>
         </div>
       </main>
+      {needsPassword && <SetPasswordModal />}
     </div>
   );
 }
