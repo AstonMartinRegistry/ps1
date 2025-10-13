@@ -1,6 +1,7 @@
 import { getServerSupabase } from "@/lib/supabase/server";
 import UserBadge from "@/components/UserBadge";
 import SetPasswordModal from "@/components/SetPasswordModal";
+import ProfileEditor from "@/components/ProfileEditor";
 
 export default async function AppLayout({
   children,
@@ -46,11 +47,7 @@ export default async function AppLayout({
         </div>
         <div className="profile-content">
           <div className="profile-wrap">
-            <h2 className="profile-title">welcome home</h2>
-            <label className="field-label" htmlFor="hobbies">some of my hobies</label>
-            <textarea id="hobbies" className="text-area" rows={6} />
-            <label className="field-label" htmlFor="dreams">what I want to do when I grow up</label>
-            <textarea id="dreams" className="text-area" rows={6} />
+            <ProfileEditor />
           </div>
         </div>
       </main>

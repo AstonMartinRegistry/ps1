@@ -277,10 +277,7 @@ body:has(#manifesto:target) .sidebar nav a[href="#manifesto"] {
   text-transform: lowercase;
 }
 
-/* debug: add 1px black border to all divs */
-div {
-  border: 1px solid #000000;
-}
+/* debug border removed */
 
 /* Manifesto visibility control */
 body:has(#manifesto:target) .hero {
