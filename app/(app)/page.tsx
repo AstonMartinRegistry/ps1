@@ -1,3 +1,5 @@
+import SearchResults from "@/components/SearchResults";
+
 export default function Home() {
   return (
     <section className="hero">
@@ -5,16 +7,7 @@ export default function Home() {
         <div className="hero-title-wrap">
           <h1 className="hero-title">the registry</h1>
         </div>
-        <div className="hero-search-wrap">
-          <form className="search-box" action="#" role="search">
-            <input
-              className="search-input"
-              type="search"
-              placeholder="Search..."
-              aria-label="Search"
-            />
-          </form>
-        </div>
+        <SearchResults />
       </div>
     </section>
   );

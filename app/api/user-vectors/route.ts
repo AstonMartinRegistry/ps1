@@ -11,6 +11,7 @@ export async function GET() {
     .from("user_vectors")
     .select("id, content, content_text")
     .eq("user_id", user.id)
+    .eq("is_core", false)
     .order("id", { ascending: true });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ items: data || [] });
@@ -72,8 +73,9 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "error" }, { status: 500 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "error";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
@@ -111,8 +113,9 @@ export async function DELETE(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
     return NextResponse.json({ ok: true });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || "error" }, { status: 500 });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "error";
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
 
