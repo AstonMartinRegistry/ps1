@@ -21,6 +21,8 @@ export default function UserBadge({ email }: Props) {
     return () => document.removeEventListener("mousedown", onDocClick);
   }, [open]);
 
+  // no notifications polling here; badge is for account only
+
   async function onSignOut() {
     try {
       await fetch("/auth/signout", { method: "POST" });

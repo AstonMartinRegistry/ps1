@@ -17,7 +17,26 @@ export async function POST(request: Request) {
       p_limit: k,
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ results: data || [] });
+
+    const results = (data || []) as Array<{ user_id: string; name: string; top_chunk: any; score: number }>;
+
+    // Notify matched users (one row per recipient). RLS should allow insert when triggered_by_user_id = auth.uid().
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (user && results.length) {
+      const notifications = results.map((r) => ({
+        recipient_user_id: r.user_id,
+        triggered_by_user_id: user.id,
+        query: q,
+      }));
+      // Best-effort; ignore errors so search still returns
+      await supabase.from("notifications").insert(notifications);
+      // notify client UIs to refresh
+      try { (globalThis as any).dispatchEvent?.(new Event("notifications:refresh")); } catch {}
+    }
+
+    return NextResponse.json({ results });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "error";
     return NextResponse.json({ error: msg }, { status: 500 });

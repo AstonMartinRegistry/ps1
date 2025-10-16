@@ -117,7 +117,7 @@ body {
   right: 24px;
   display: inline-flex;
   gap: 8px;
-  z-index: 2;
+  z-index: 100;
 }
 
 /* Persistent active state using hash routing (no JS) */
