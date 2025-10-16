@@ -18,7 +18,8 @@ export async function POST(request: Request) {
     });
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    const results = (data || []) as Array<{ user_id: string; name: string; top_chunk: any; score: number }>;
+    type Ranked = { user_id: string; name: string; top_chunk: { content: string; content_text: string; similarity: number }; score: number };
+    const results = (data || []) as Ranked[];
 
     // Notify matched users (one row per recipient). RLS should allow insert when triggered_by_user_id = auth.uid().
     const {
@@ -33,7 +34,8 @@ export async function POST(request: Request) {
       // Best-effort; ignore errors so search still returns
       await supabase.from("notifications").insert(notifications);
       // notify client UIs to refresh
-      try { (globalThis as any).dispatchEvent?.(new Event("notifications:refresh")); } catch {}
+      // Best-effort client refresh hint (ignored in production unless handled)
+      try { (globalThis as unknown as Window).dispatchEvent?.(new Event("notifications:refresh")); } catch {}
     }
 
     return NextResponse.json({ results });

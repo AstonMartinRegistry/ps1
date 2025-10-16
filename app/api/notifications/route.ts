@@ -21,7 +21,7 @@ export async function GET() {
     .select("id, recipient_user_id, triggered_by_user_id, query, created_at")
     .eq("recipient_user_id", user.id)
     .order("created_at", { ascending: false })
-    .limit(5) as { data: NotificationRow[] | null; error: any };
+    .limit(5) as { data: NotificationRow[] | null; error: { message: string } | null };
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ items: data ?? [] });
 }

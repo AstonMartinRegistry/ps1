@@ -27,7 +27,7 @@ export default function NotificationsList() {
     <div style={{ display: "grid", gap: 8 }}>
       {items.map((n) => (
         <div key={n.id} className="modal" style={{ padding: 12 }}>
-          <div>you appeared in a search for "{n.query}"</div>
+          <div>you appeared in a search for &quot;{n.query}&quot;</div>
           <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>{new Date(n.created_at).toLocaleString()}</div>
         </div>
       ))}
