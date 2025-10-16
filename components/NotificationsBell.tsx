@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getBrowserSupabase } from "@/lib/supabase/browser";
 
 type Notif = { id: number; query: string; created_at: string };
 
@@ -9,6 +10,8 @@ export default function NotificationsBell() {
   const [count, setCount] = useState(0);
   const [items, setItems] = useState<Notif[]>([]);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const supabase = getBrowserSupabase();
+  const [userId, setUserId] = useState<string | null>(null);
 
   async function load(fetchList: boolean) {
     const res = await fetch("/api/notifications", { cache: "no-store" });
@@ -21,24 +24,55 @@ export default function NotificationsBell() {
 
   useEffect(() => {
     let mounted = true;
-    // initial count
-    load(false).catch(() => {});
+    // get auth user id
+    supabase.auth.getUser().then(({ data }) => {
+      if (!mounted) return;
+      const uid = data.user?.id ?? null;
+      setUserId(uid);
+      // initial count
+      load(false).catch(() => {});
+      // subscribe to realtime inserts (requires Realtime enabled on notifications)
+      if (uid) {
+        const channel = supabase
+          .channel("notifications_insert")
+          .on(
+            "postgres_changes",
+            {
+              event: "INSERT",
+              schema: "public",
+              table: "notifications",
+              filter: `recipient_user_id=eq.${uid}`,
+            },
+            (payload) => {
+              // increment count and prepend if open
+              setCount((c) => c + 1);
+              if (open) {
+                const row = payload.new as any;
+                setItems((arr) => [
+                  { id: row.id, query: row.query, created_at: row.created_at },
+                  ...arr,
+                ].slice(0, 5));
+              }
+            }
+          )
+          .subscribe();
+        return () => {
+          mounted = false;
+          supabase.removeChannel?.(channel);
+        };
+      }
+    });
     function onDoc(e: MouseEvent) {
       if (!open) return;
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
-    function onRefresh() {
-      // refresh list if open; always refresh count
-      load(open).catch(() => {});
-    }
     document.addEventListener("mousedown", onDoc);
-    window.addEventListener("notifications:refresh", onRefresh as EventListener);
     return () => {
       mounted = false;
       document.removeEventListener("mousedown", onDoc);
-      window.removeEventListener("notifications:refresh", onRefresh as EventListener);
     };
-  }, [open]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function toggleOpen() {
     const willOpen = !open;
