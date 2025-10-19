@@ -1,47 +1,88 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { getBrowserSupabase } from "@/lib/supabase/browser";
 
 type Notif = { id: number; query: string; created_at: string };
 
+async function fetchJSON<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(url, init);
+  if (!res.ok) throw new Error(`request failed: ${res.status}`);
+  return res.json();
+}
+
 export default function NotificationsBell() {
   const [open, setOpen] = useState(false);
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0); // unread badge from server
   const [items, setItems] = useState<Notif[]>([]);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const isOpenRef = useRef(false);
+  const supabase = getBrowserSupabase();
 
-  async function load(fetchList: boolean) {
-    const res = await fetch("/api/notifications", { cache: "no-store" });
-    const json = await res.json();
-    if (Array.isArray(json.items)) {
-      setCount(json.items.length);
-      if (fetchList) setItems(json.items as Notif[]);
-    }
-  }
-
+  // Initial badge from server
   useEffect(() => {
-    // initial count
-    load(false).catch(() => {});
+    fetchJSON<{ items: Notif[]; unread_count: number }>("/api/notifications")
+      .then((json) => setCount(json.unread_count || 0))
+      .catch(() => {});
+  }, []);
+
+  // Subscribe once to realtime inserts; use a ref to know if dropdown is open
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (!uid) return;
+      const channel = supabase
+        .channel(`notifications:${uid}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "notifications", filter: `recipient_user_id=eq.${uid}` },
+          async (payload) => {
+            const row = payload.new as Notif;
+            if (isOpenRef.current) {
+              // While open: append to list AND show a small badge increment, per spec
+              setItems((prev) => (prev.some((n) => n.id === row.id) ? prev : [{ id: row.id, query: row.query, created_at: row.created_at }, ...prev]));
+              setCount((c) => c + 1);
+            } else {
+              // Not viewing: bump badge only
+              setCount((c) => c + 1);
+            }
+          }
+        )
+        .subscribe();
+      return () => { try { supabase.removeChannel(channel); } catch {} };
+    })();
+    // subscribe once
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
     function onDoc(e: MouseEvent) {
       if (!open) return;
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     }
-    function onRefresh() {
-      // refresh list if open; always refresh count
-      load(open).catch(() => {});
-    }
     document.addEventListener("mousedown", onDoc);
-    window.addEventListener("notifications:refresh", onRefresh as EventListener);
-    return () => {
-      document.removeEventListener("mousedown", onDoc);
-      window.removeEventListener("notifications:refresh", onRefresh as EventListener);
-    };
+    return () => { document.removeEventListener("mousedown", onDoc); };
   }, [open]);
 
   async function toggleOpen() {
     const willOpen = !open;
     setOpen(willOpen);
-    if (willOpen) load(true).catch(() => {});
+    isOpenRef.current = willOpen;
+    if (willOpen) {
+      try {
+        // Mark all as read on server, then fetch latest list to display
+        await fetch("/api/notifications/read", { method: "POST" });
+        const json = await fetchJSON<{ items: Notif[]; unread_count: number }>("/api/notifications");
+        setItems(json.items || []);
+      } catch {}
+      // Clear badge locally
+      setCount(0);
+    } else {
+      // On close, clear badge; new inserts after close will bump it again
+      setCount(0);
+    }
   }
 
   return (
@@ -56,7 +97,7 @@ export default function NotificationsBell() {
         )}
       </button>
       {open && (
-        <div style={{ position: "absolute", top: 44, right: 0, width: 320 }} className="user-popover">
+        <div style={{ position: "absolute", top: 44, right: 0, width: 320, maxHeight: 260, overflowY: "auto" }} className="user-popover">
           <div style={{ fontWeight: 600, marginBottom: 8 }}>notifications</div>
           {items.length === 0 ? (
             <div style={{ opacity: 0.8 }}>no notifications</div>

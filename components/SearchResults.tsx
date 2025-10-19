@@ -20,7 +20,7 @@ export default function SearchResults() {
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query, limit: 12 }),
+      body: JSON.stringify({ query, limit: 1 }),
     });
     const json = await res.json();
     if (!res.ok) {

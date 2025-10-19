@@ -26,16 +26,22 @@ export async function POST(request: Request) {
       data: { user },
     } = await supabase.auth.getUser();
     if (user && results.length) {
-      const notifications = results.map((r) => ({
+      // never notify the searching user about themselves
+      const filtered = results.filter((r) => r.user_id !== user.id);
+      const notifications = filtered.map((r) => ({
         recipient_user_id: r.user_id,
         triggered_by_user_id: user.id,
         query: q,
       }));
       // Best-effort; ignore errors so search still returns
-      await supabase.from("notifications").insert(notifications);
+      if (notifications.length) await supabase.from("notifications").insert(notifications);
       // notify client UIs to refresh
       // Best-effort client refresh hint (ignored in production unless handled)
       try { (globalThis as unknown as Window).dispatchEvent?.(new Event("notifications:refresh")); } catch {}
+
+      // increment search_count for matched profiles
+      const userIds = filtered.map((r) => r.user_id);
+      if (userIds.length) await supabase.rpc("increment_search_counts", { p_user_ids: userIds });
     }
 
     return NextResponse.json({ results });

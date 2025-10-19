@@ -8,14 +8,23 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { data: profileRow, error } = await supabase
+  const { data: profileRowInitial, error } = await supabase
     .from("profiles")
     .select("image_url, name, major, year, dorm")
     .eq("user_id", user.id)
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-  // Load core texts from user_vectors
+  // Auto-create a blank profile row if missing so the account is searchable/joinable
+  let profileRow = profileRowInitial;
+  if (!profileRow) {
+    const { error: insErr } = await supabase
+      .from("profiles")
+      .insert({ user_id: user.id, image_url: "", name: "", major: "", year: "", dorm: "" });
+    if (insErr) return NextResponse.json({ error: insErr.message }, { status: 400 });
+    profileRow = { image_url: "", name: "", major: "", year: "", dorm: "" };
+  }
+
   type CoreRow = { content: string; content_text: string | null; is_core: boolean };
   const { data: coreRows } = await supabase
     .from("user_vectors")

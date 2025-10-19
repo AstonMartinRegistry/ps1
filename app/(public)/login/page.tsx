@@ -12,8 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState<string | null>(null);
 
-  // Only allow stanford.edu (including subdomains like cs.stanford.edu)
-  const isStanfordEmail = (value: string) => /@([^.]+\.)?stanford\.edu$/i.test(value.trim());
+  // Domain restriction disabled for testing
 
   useEffect(() => {
     try {
@@ -26,10 +25,7 @@ export default function LoginPage() {
   async function onEmailSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus("sending code...");
-    if (!isStanfordEmail(email)) {
-      setStatus("hold your horses");
-      return;
-    }
+    // domain restriction temporarily disabled
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -109,10 +105,7 @@ export default function LoginPage() {
           <form className="search-box" onSubmit={async (e) => {
             e.preventDefault();
             setStatus("signing in...");
-            if (!isStanfordEmail(pwEmail)) {
-              setStatus("hold your horses");
-              return;
-            }
+            // domain restriction temporarily disabled
             const { error } = await supabase.auth.signInWithPassword({ email: pwEmail, password });
             if (error) {
               setStatus(error.message);
@@ -127,8 +120,6 @@ export default function LoginPage() {
               placeholder="Email"
               value={pwEmail}
               onChange={(e) => setPwEmail(e.target.value)}
-              pattern="^[^@\s]+@([^.]+\.)?stanford\.edu$"
-              title="Use your @stanford.edu email"
               required
             />
             <div style={{ height: 6 }} />
