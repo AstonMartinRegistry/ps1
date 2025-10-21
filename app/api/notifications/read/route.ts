@@ -10,7 +10,7 @@ export async function POST() {
 
   const { error } = await supabase
     .from("profiles")
-    .update({ notifications_read_at: new Date().toISOString() })
+    .update({ notifications_read_at: new Date().toISOString(), unread_notifications_count: 0 })
     .eq("user_id", user.id);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });

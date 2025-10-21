@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { getBrowserSupabase } from "@/lib/supabase/browser";
 
 type Notif = { id: number; query: string; created_at: string };
@@ -19,12 +19,18 @@ export default function NotificationsBell() {
   const isOpenRef = useRef(false);
   const supabase = getBrowserSupabase();
 
+  const refreshUnread = useCallback(async () => {
+    try {
+      // cache-bust to ensure fresh value
+      const json = await fetchJSON<{ items: Notif[]; unread_count: number }>(`/api/notifications?_=${Date.now()}`);
+      setCount(json.unread_count || 0);
+    } catch {}
+  }, []);
+
   // Initial badge from server
   useEffect(() => {
-    fetchJSON<{ items: Notif[]; unread_count: number }>("/api/notifications")
-      .then((json) => setCount(json.unread_count || 0))
-      .catch(() => {});
-  }, []);
+    refreshUnread();
+  }, [refreshUnread]);
 
   // Subscribe once to realtime inserts; use a ref to know if dropdown is open
   useEffect(() => {
@@ -65,6 +71,23 @@ export default function NotificationsBell() {
     document.addEventListener("mousedown", onDoc);
     return () => { document.removeEventListener("mousedown", onDoc); };
   }, [open]);
+
+  // Refresh unread count when page becomes visible/focused or when app dispatches a refresh event
+  useEffect(() => {
+    function onVis() {
+      if (document.visibilityState === "visible") refreshUnread();
+    }
+    function onFocus() { refreshUnread(); }
+    function onRefresh() { refreshUnread(); }
+    document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("focus", onFocus);
+    window.addEventListener("notifications:refresh", onRefresh as EventListener);
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("notifications:refresh", onRefresh as EventListener);
+    };
+  }, [refreshUnread]);
 
   async function toggleOpen() {
     const willOpen = !open;
