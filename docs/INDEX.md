@@ -46,10 +46,10 @@ High-level map of the codebase with routes, components, libs, configs, and data 
 
 ### API Routes (`app/api/*`)
 - `notifications/route.ts` (GET)
-  - Returns last 100 notifications for the authenticated user and `unread_count` from `profiles.unread_notifications_count` (maintained by DB trigger).
+  - Returns last 100 notifications for the authenticated user and `unread_count` based on `profiles.notifications_read_at`.
 
 - `notifications/read/route.ts` (POST)
-  - Sets `profiles.notifications_read_at = now()` and resets `unread_notifications_count = 0` for the current user.
+  - Sets `profiles.notifications_read_at = now()` for the current user.
 
 - `profile/route.ts` (GET, POST)
   - GET: Returns basic profile fields plus two core text fields (mapped from `user_vectors`: "some_of_my_hobies", "what_i_want_to_do_when_i_grow_up"). Auto-creates blank profile row if missing.
@@ -134,7 +134,7 @@ Defined in `README.md` and used in code:
 - Tables: `profiles`, `notifications`, `user_vectors`
 - RPC functions: `rank_profiles`, `increment_search_counts`
 - Notes:
-  - Notifications: inserted on search for matched users; unread count denormalized in `profiles.unread_notifications_count` via trigger `trg_notifications_unread_inc` + function `public.increment_unread_notifications_count()`; also recomputed by a maintenance update statement.
+  - Notifications: inserted on search for matched users; unread count derived from `profiles.notifications_read_at`.
   - Vectors: two core keys are used for profile text — `some_of_my_hobies` and `what_i_want_to_do_when_i_grow_up`.
 
 ---

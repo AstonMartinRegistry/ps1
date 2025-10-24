@@ -53,6 +53,29 @@ export default function SearchResults() {
               <div style={{ marginTop: 4 }}>{r.top_chunk.content_text}</div>
               <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>similarity {r.top_chunk.similarity.toFixed(3)}</div>
             </div>
+            <div style={{ marginTop: 10 }}>
+              <button className="btn" type="button" aria-label={`chat with ${r.name || "profile"}`}
+                onClick={async () => {
+                  try {
+                    const res = await fetch("/api/dms/ensure", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ other_user_id: r.user_id }),
+                    });
+                    const json = await res.json();
+                    if (!res.ok) throw new Error(json?.error || "failed to start chat");
+                    const url = new URL(window.location.href);
+                    url.hash = "dms";
+                    url.searchParams.set("dm", json.conversation_id);
+                    window.location.href = url.toString();
+                  } catch (e) {
+                    alert(e instanceof Error ? e.message : "failed to start chat");
+                  }
+                }}
+              >
+                chat
+              </button>
+            </div>
           </div>
         ))}
       </div>

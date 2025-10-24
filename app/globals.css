@@ -26,6 +26,11 @@ body {
   z-index: 1;
 }
 
+/* When DMS is targeted, show an extra middle column as an empty pane */
+body:has(#dms:target) .app-shell {
+  grid-template-columns: 280px 360px 1fr;
+}
+
 .sidebar {
   display: flex;
   flex-direction: column;
@@ -106,9 +111,131 @@ body {
   transform: translateY(1px);
 }
 
+.dms-pane {
+  display: none !important;
+}
+
+body:has(#dms:target) .dms-pane {
+  display: block !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* DMS list pane */
+.dms-list {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+}
+.dms-list-header {
+  padding: 16px;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+.dms-list-scroll {
+  overflow: auto;
+  padding: 8px;
+}
+
+.dms-list-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 36px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.dms-list-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.dms-active {
+  background: rgba(255, 255, 255, 0.10);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+.dms-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.dms-item-text { min-width: 0; }
+.dms-item-name { font-weight: 600; }
+.dms-item-sub {
+  font-size: 12px;
+  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dms-item-badge {
+  background: #f87171;
+  color: #0b1222;
+  border-radius: 999px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+/* Right thread placeholder (empty for now) */
+.dms-thread {
+  display: none !important;
+}
+body:has(#dms:target) .dms-thread {
+  display: block !important;
+}
+
+.dms-thread {
+  padding: 0 24px 24px 24px;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+}
+.dms-thread-header {
+  font-weight: 600;
+  text-transform: lowercase;
+  padding: 16px 0;
+}
+.dms-thread-scroll {
+  margin-top: 0;
+  display: grid;
+  gap: 8px;
+  overflow: auto;
+}
+.dms-composer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  padding-top: 12px;
+  background: transparent;
+  justify-self: end;
+  width: min(520px, 100%);
+}
+.dms-msg {
+  max-width: 64ch;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.10);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.dms-msg.me {
+  justify-self: end;
+  background: rgba(255, 255, 255, 0.92);
+  color: #0b1222;
+}
+
 .main {
   padding: 24px;
   position: relative;
+}
+
+/* Align DMS thread header with list header */
+body:has(#dms:target) .main {
+  padding-top: 0;
 }
 
 .main-actions {
@@ -314,6 +441,19 @@ body:has(#profile:target) .manifesto-content {
 
 body:has(#profile:target) .profile-content {
   display: block;
+}
+
+/* Align profile to top by offsetting parent's padding */
+body:has(#profile:target) .profile-content {
+  margin-top: -24px;
+  padding-top: 24px;
+}
+
+/* DMS visibility control (empty view) */
+body:has(#dms:target) .hero,
+body:has(#dms:target) .manifesto-content,
+body:has(#dms:target) .profile-content {
+  display: none;
 }
 
 .profile-wrap {
