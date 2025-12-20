@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 export default function LoginPage() {
   const supabase = getBrowserSupabase();
-  const [step, setStep] = useState<"email" | "otp">("email");
+  const [step, setStep] = useState<"password" | "email" | "otp">("password");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [pwEmail, setPwEmail] = useState("");
@@ -63,81 +63,126 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="hero">
-      <div className="hero-group">
-        <h1 className="hero-title">welcome to the registry</h1>
-        <p style={{ maxWidth: 640, textAlign: "center", color: "#cbd5e1", margin: 0 }}>
-          find anyone in 5 seconds. search across public signals with precision.
-        </p>
+    <div className="minimal-layout">
+      <header className="minimal-header">
+        <h1 className="minimal-logo">
+          <span className="blue-square"></span>
+          theregistry
+        </h1>
+      </header>
 
-        {step === "email" ? (
-          <form className="search-box" onSubmit={onEmailSubmit}>
-            <input
-              className="search-input"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-            <div style={{ height: 8 }} />
-            <button className="btn" type="submit">send code</button>
-          </form>
-        ) : (
-          <form className="otp-box" onSubmit={onOtpSubmit}>
-            <input
-              className="otp-input"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              placeholder="••••••"
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-              maxLength={6}
-            />
-            <div style={{ height: 8 }} />
-            <button className="btn" type="submit">verify</button>
-          </form>
-        )}
+      <div className="minimal-content">
+        <aside className="minimal-box">
+          <h2 className="minimal-box-title">login</h2>
+          {step === "password" ? (
+            <>
+              <form className="minimal-form" onSubmit={async (e) => {
+                e.preventDefault();
+                if (!pwEmail || !password) {
+                  setStatus("please enter email and password");
+                  return;
+                }
+                setStatus("signing in...");
+                const { error } = await supabase.auth.signInWithPassword({ email: pwEmail, password });
+                if (error) {
+                  setStatus(error.message);
+                  return;
+                }
+                setStatus(null);
+                window.location.href = "/";
+              }}>
+                <input
+                  className="minimal-input"
+                  type="email"
+                  placeholder="email"
+                  value={pwEmail}
+                  onChange={(e) => setPwEmail(e.target.value)}
+                  required
+                  autoFocus
+                />
+                <input
+                  className="minimal-input"
+                  type="password"
+                  placeholder="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button className="minimal-button" type="submit">login</button>
+              </form>
+            </>
+          ) : step === "email" ? (
+            <form className="minimal-form" onSubmit={onEmailSubmit}>
+              <input
+                className="minimal-input"
+                type="email"
+                placeholder="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoFocus
+              />
+              <button className="minimal-button" type="submit">send code</button>
+            </form>
+          ) : step === "otp" ? (
+            <form className="minimal-form" onSubmit={onOtpSubmit}>
+              <input
+                className="minimal-input"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                placeholder="6-digit code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                maxLength={6}
+                required
+                autoFocus
+              />
+              <button className="minimal-button" type="submit">verify</button>
+            </form>
+          ) : null}
 
-        <div style={{ height: 16 }} />
-        <div className="hero-search-wrap" style={{ width: "min(520px, 90%)", textAlign: "center" }}>
-          <p style={{ margin: "8px 0", color: "#cbd5e1" }}>or sign in with a password</p>
-          <form className="search-box" onSubmit={async (e) => {
-            e.preventDefault();
-            setStatus("signing in...");
-            // domain restriction temporarily disabled
-            const { error } = await supabase.auth.signInWithPassword({ email: pwEmail, password });
-            if (error) {
-              setStatus(error.message);
-              return;
-            }
-            setStatus(null);
-            window.location.href = "/";
-          }}>
-            <input
-              className="search-input"
-              type="email"
-              placeholder="Email"
-              value={pwEmail}
-              onChange={(e) => setPwEmail(e.target.value)}
-              required
-            />
-            <div style={{ height: 6 }} />
-            <input
-              className="search-input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <div style={{ height: 8 }} />
-            <button className="btn" type="submit">sign in</button>
-          </form>
-        </div>
+          {status && <p className="minimal-status">{status}</p>}
+        </aside>
 
-        {status && <p style={{ color: "#cbd5e1" }}>{status}</p>}
+        <main className="minimal-box">
+          <h2 className="minimal-box-title">[ welcome to Theregistry ]</h2>
+          <p className="minimal-text">
+            Theregistry is an online directory that connects people through artificial intelligence. The registry is only open to stanford students.
+          </p>
+          <p className="minimal-text">
+            You can use the registry to:
+          </p>
+          <ul className="minimal-list">
+            <li>search for people with natural language</li>
+            <li>message the people you find</li>
+            <li>optimize your searchability</li>
+          </ul>
+          <p className="minimal-text">
+            To get started, enter your email. If you already created an account you can login.
+          </p>
+          
+          {step === "password" && (
+            <>
+              <h2 className="minimal-box-title">register</h2>
+              <form className="minimal-form" onSubmit={onEmailSubmit}>
+                <input
+                  className="minimal-input"
+                  type="email"
+                  placeholder="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+                <button className="minimal-button" type="submit">send code</button>
+              </form>
+            </>
+          )}
+        </main>
       </div>
+
+      <footer className="minimal-footer">
+        <p className="minimal-footer-text">born dec 25</p>
+      </footer>
     </div>
   );
 }

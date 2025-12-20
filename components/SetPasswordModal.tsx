@@ -54,7 +54,7 @@ export default function SetPasswordModal() {
           <div style={{ height: 10 }} />
           <button className="btn" type="submit">save password</button>
         </form>
-        {status && <p style={{ color: "#cbd5e1", marginTop: 8 }}>{status}</p>}
+        {status && <p style={{ color: "#666666", marginTop: 8, fontWeight: 300, fontSize: 13 }}>{status}</p>}
       </div>
     </div>
   );

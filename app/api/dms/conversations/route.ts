@@ -3,6 +3,8 @@ import { getServerSupabase } from "@/lib/supabase/server";
 
 type MemberRow = { conversation_id: string; user_id: string };
 type ProfileRow = { user_id: string; name: string | null; image_url: string | null };
+type MessageRow = { conversation_id: string; body: string; created_at: string };
+type SupabaseError = { message: string } | null;
 
 export async function GET() {
   try {
@@ -14,7 +16,7 @@ export async function GET() {
     // All conversations I'm in
     const { data: mine, error: memErr } = await supabase
       .from("conversation_members")
-      .select("conversation_id, user_id") as { data: MemberRow[] | null; error: any };
+      .select("conversation_id, user_id") as { data: MemberRow[] | null; error: SupabaseError };
     if (memErr) return NextResponse.json({ error: memErr.message }, { status: 400 });
     const myRows = (mine || []).filter(r => r.user_id === me);
     const convIds = Array.from(new Set(myRows.map(r => r.conversation_id)));
@@ -24,7 +26,7 @@ export async function GET() {
     const { data: othersAll, error: othersErr } = await supabase
       .from("conversation_members")
       .select("conversation_id, user_id")
-      .in("conversation_id", convIds) as { data: MemberRow[] | null; error: any };
+      .in("conversation_id", convIds) as { data: MemberRow[] | null; error: SupabaseError };
     if (othersErr) return NextResponse.json({ error: othersErr.message }, { status: 400 });
     const others = (othersAll || []).filter(r => r.user_id !== me);
     const otherUserIds = Array.from(new Set(others.map(r => r.user_id)));
@@ -41,14 +43,31 @@ export async function GET() {
     const byConv = new Map<string, string>();
     for (const r of others) { if (!byConv.has(r.conversation_id)) byConv.set(r.conversation_id, r.user_id); }
 
+    // Fetch last message for each conversation
+    const { data: messages } = await supabase
+      .from("messages")
+      .select("conversation_id, body, created_at")
+      .in("conversation_id", convIds)
+      .order("created_at", { ascending: false });
+    
+    const lastMessageByConv = new Map<string, { body: string; created_at: string }>();
+    (messages || []).forEach((msg: MessageRow) => {
+      if (!lastMessageByConv.has(msg.conversation_id)) {
+        lastMessageByConv.set(msg.conversation_id, { body: msg.body, created_at: msg.created_at });
+      }
+    });
+
     const items = convIds.map(cid => {
       const otherId = byConv.get(cid) || null;
       const prof = otherId ? idToProfile.get(otherId) : undefined;
+      const lastMsg = lastMessageByConv.get(cid);
       return {
         conversation_id: cid,
         other_user_id: otherId,
         name: prof?.name ?? "",
         image_url: prof?.image_url ?? "",
+        last_message: lastMsg?.body ?? "",
+        last_message_at: lastMsg?.created_at ?? "",
       };
     });
 
@@ -58,6 +77,8 @@ export async function GET() {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+
 
 
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 type RankedResult = {
   user_id: string;
@@ -9,14 +9,24 @@ type RankedResult = {
   score: number; // weighted
 };
 
-export default function SearchResults() {
+type Props = {
+  onResultsChange: (hasResults: boolean) => void;
+};
+
+export default function SearchResults({ onResultsChange }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<RankedResult[]>([]);
   const [status, setStatus] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+
+  useEffect(() => {
+    onResultsChange(hasSearched);
+  }, [hasSearched, onResultsChange]);
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
     setStatus("searching...");
+    setHasSearched(true);
     const res = await fetch("/api/search", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -33,25 +43,32 @@ export default function SearchResults() {
   }
 
   return (
-    <div>
-      <form onSubmit={onSearch} className="hero-search-wrap" style={{ width: "min(520px,90%)" }}>
-        <input className="search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="search profiles..." />
-        <div style={{ height: 8 }} />
-        <button className="btn" type="submit">search</button>
-      </form>
-      {status && <p style={{ color: "#cbd5e1", marginTop: 8 }}>{status}</p>}
+    <div className="search-container">
+      {!hasSearched && (
+        <>
+          <form onSubmit={onSearch} className="hero-search-wrap" style={{ width: "min(520px,90%)" }}>
+            <input className="search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="search profiles..." />
+            <div style={{ height: 8 }} />
+            <button className="btn" type="submit">search</button>
+          </form>
+          {status && <p style={{ color: "#666666", marginTop: 8, fontWeight: 300, fontSize: 13 }}>{status}</p>}
+        </>
+      )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12, marginTop: 16 }}>
-        {results.map((r) => (
+      {hasSearched && (
+        <>
+          {results.length > 0 ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12, marginBottom: 80 }}>
+              {results.map((r) => (
           <div key={r.user_id} className="modal" style={{ padding: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div style={{ fontWeight: 600 }}>{r.name || "profile"}</div>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>score {r.score.toFixed(3)}</div>
+              <div style={{ fontWeight: 300 }}>{r.name || "profile"}</div>
+              <div style={{ fontSize: 12, opacity: 0.6, fontWeight: 300 }}>score {r.score.toFixed(3)}</div>
             </div>
             <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 12, opacity: 0.8 }}>{r.top_chunk.content.replace(/_/g, " ")}</div>
-              <div style={{ marginTop: 4 }}>{r.top_chunk.content_text}</div>
-              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.8 }}>similarity {r.top_chunk.similarity.toFixed(3)}</div>
+              <div style={{ fontSize: 12, opacity: 0.6, fontWeight: 300 }}>{r.top_chunk.content.replace(/_/g, " ")}</div>
+              <div style={{ marginTop: 4, fontWeight: 300, fontSize: 13 }}>{r.top_chunk.content_text}</div>
+              <div style={{ marginTop: 6, fontSize: 12, opacity: 0.6, fontWeight: 300 }}>similarity {r.top_chunk.similarity.toFixed(3)}</div>
             </div>
             <div style={{ marginTop: 10 }}>
               <button className="btn" type="button" aria-label={`chat with ${r.name || "profile"}`}
@@ -78,7 +95,32 @@ export default function SearchResults() {
             </div>
           </div>
         ))}
-      </div>
+            </div>
+          ) : (
+            <div style={{ fontWeight: 300, fontSize: 14, color: "#666666" }}>
+              {status || "no results found"}
+            </div>
+          )}
+          
+          <div className="search-bar-bottom">
+            <form onSubmit={onSearch} style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
+              <input 
+                className="search-input" 
+                value={query} 
+                onChange={(e) => setQuery(e.target.value)} 
+                placeholder="search profiles..." 
+                style={{ flex: 1, height: 44, margin: 0, padding: "0 14px" }}
+              />
+              <button className="btn" type="submit" style={{ minWidth: 44, height: 44, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "auto" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <path d="m21 21-4.35-4.35"></path>
+                </svg>
+              </button>
+            </form>
+          </div>
+        </>
+      )}
     </div>
   );
 }

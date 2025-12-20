@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSupabase } from "@/lib/supabase/server";
 
+type MessageRow = { id: string; sender_user_id: string; body: string; created_at: string };
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -21,9 +23,9 @@ export async function GET(request: Request) {
       .limit(200);
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
-    const items = (data || []).map((r: any) => ({
+    const items = (data || []).map((r: MessageRow) => ({
       id: r.id,
-      text: r.body as string,
+      text: r.body,
       me: r.sender_user_id === me,
       created_at: r.created_at,
     }));
@@ -59,6 +61,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
+
+
 
 
 

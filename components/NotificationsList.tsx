@@ -21,14 +21,14 @@ export default function NotificationsList() {
     return () => { mounted = false; clearInterval(id); };
   }, []);
 
-  if (!items.length) return <div style={{ opacity: 0.8 }}>no notifications</div>;
+  if (!items.length) return <div style={{ opacity: 0.6, fontWeight: 300, fontSize: 13 }}>no notifications</div>;
 
   return (
     <div style={{ display: "grid", gap: 8 }}>
       {items.map((n) => (
         <div key={n.id} className="modal" style={{ padding: 12 }}>
-          <div>you appeared in a search for &quot;{n.query}&quot;</div>
-          <div style={{ fontSize: 12, opacity: 0.8, marginTop: 4 }}>{new Date(n.created_at).toLocaleString()}</div>
+          <div style={{ fontWeight: 300, fontSize: 13 }}>you appeared in a search for &quot;{n.query}&quot;</div>
+          <div style={{ fontSize: 12, opacity: 0.6, marginTop: 4, fontWeight: 300 }}>{new Date(n.created_at).toLocaleString()}</div>
         </div>
       ))}
     </div>

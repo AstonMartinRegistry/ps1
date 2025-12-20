@@ -202,7 +202,7 @@ export default function ProfileEditor() {
       ) : (
         <button className="btn" onClick={onSave}>save</button>
       )}
-      {status && <p style={{ color: "#cbd5e1", marginTop: 8 }}>{status}</p>}
+      {status && <p style={{ color: "#666666", marginTop: 8, fontWeight: 300, fontSize: 13 }}>{status}</p>}
     </div>
   );
 }
