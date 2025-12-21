@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 type RankedResult = {
   user_id: string;
@@ -18,10 +18,28 @@ export default function SearchResults({ onResultsChange }: Props) {
   const [results, setResults] = useState<RankedResult[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const textAreaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     onResultsChange(hasSearched);
   }, [hasSearched, onResultsChange]);
+
+  const handleAutoResize = useCallback((ta: HTMLTextAreaElement | null) => {
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = `${ta.scrollHeight}px`;
+  }, []);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        formRef.current?.requestSubmit?.();
+      }
+    },
+    []
+  );
 
   async function onSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -40,27 +58,62 @@ export default function SearchResults({ onResultsChange }: Props) {
     }
     setStatus(null);
     setResults(json.results || []);
+    setQuery("");
   }
+
+  const renderSearchForm = (wrapperClass: string) => (
+    <div className={wrapperClass}>
+      <form ref={formRef} onSubmit={onSearch} className="chatgpt-search-form">
+        <textarea
+          ref={textAreaRef}
+          className="chatgpt-search-input"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            handleAutoResize(e.target);
+          }}
+          placeholder="describe who you're looking for..."
+          rows={1}
+          onInput={(e) => handleAutoResize(e.currentTarget)}
+          onKeyDown={handleKeyDown}
+        />
+        <button className="chatgpt-search-btn" type="submit" disabled={!query.trim()}>
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </button>
+      </form>
+    </div>
+  );
 
   return (
     <div className="search-container">
       {!hasSearched && (
-        <>
-          <form onSubmit={onSearch} className="hero-search-wrap" style={{ width: "min(520px,90%)" }}>
-            <input className="search-input" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="search profiles..." />
-            <div style={{ height: 8 }} />
-            <button className="btn" type="submit">search</button>
-          </form>
-          {status && <p style={{ color: "#666666", marginTop: 8, fontWeight: 300, fontSize: 13 }}>{status}</p>}
-        </>
+        <div className="search-center-group">
+          <h2 className="chatgpt-search-title">search for anyone</h2>
+          
+          {renderSearchForm("chatgpt-search-wrapper")}
+        </div>
       )}
+      
+      {status && !hasSearched && <p className="chatgpt-search-status">{status}</p>}
 
       {hasSearched && (
-        <>
+        <div className="search-results-content">
           {results.length > 0 ? (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px,1fr))", gap: 12, marginBottom: 80 }}>
+            <div className="search-results-grid">
               {results.map((r) => (
-          <div key={r.user_id} className="modal" style={{ padding: 14 }}>
+          <div key={r.user_id} className="modal search-result-card">
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontWeight: 300 }}>{r.name || "profile"}</div>
               <div style={{ fontSize: 12, opacity: 0.6, fontWeight: 300 }}>score {r.score.toFixed(3)}</div>
@@ -97,30 +150,14 @@ export default function SearchResults({ onResultsChange }: Props) {
         ))}
             </div>
           ) : (
-            <div style={{ fontWeight: 300, fontSize: 14, color: "#666666" }}>
+            <div style={{ fontWeight: 300, fontSize: 14, color: "#666666", marginTop: 20 }}>
               {status || "no results found"}
             </div>
           )}
-          
-          <div className="search-bar-bottom">
-            <form onSubmit={onSearch} style={{ display: "flex", gap: 8, alignItems: "center", width: "100%" }}>
-              <input 
-                className="search-input" 
-                value={query} 
-                onChange={(e) => setQuery(e.target.value)} 
-                placeholder="search profiles..." 
-                style={{ flex: 1, height: 44, margin: 0, padding: "0 14px" }}
-              />
-              <button className="btn" type="submit" style={{ minWidth: 44, height: 44, padding: 0, display: "flex", alignItems: "center", justifyContent: "center", width: "auto" }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8"></circle>
-                  <path d="m21 21-4.35-4.35"></path>
-                </svg>
-              </button>
-            </form>
-          </div>
-        </>
+        </div>
       )}
+      
+      {hasSearched && renderSearchForm("search-bottom-bar")}
     </div>
   );
 }
